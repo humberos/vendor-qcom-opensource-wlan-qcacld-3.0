@@ -78,6 +78,8 @@ struct htt_host_rx_desc_base {
 	char rx_hdr_status[RX_HTT_HDR_STATUS_LEN];
 };
 
+#define RX_DESC_ATTN_MPDU_LEN_ERR_BIT   0x08000000
+
 #define RX_STD_DESC_ATTN_OFFSET	\
 	(offsetof(struct htt_host_rx_desc_base, attention))
 #define RX_STD_DESC_FRAG_INFO_OFFSET \
@@ -229,8 +231,13 @@ static inline void htt_print_rx_desc_lro(struct htt_host_rx_desc_base *rx_desc)
 static inline void htt_rx_extract_lro_info(qdf_nbuf_t msdu,
 	 struct htt_host_rx_desc_base *rx_desc)
 {
-	QDF_NBUF_CB_RX_LRO_ELIGIBLE(msdu) = rx_desc->msdu_end.lro_eligible;
-	if (rx_desc->msdu_end.lro_eligible) {
+	if (rx_desc->attention.tcp_udp_chksum_fail)
+		QDF_NBUF_CB_RX_LRO_ELIGIBLE(msdu) = 0;
+	else
+		QDF_NBUF_CB_RX_LRO_ELIGIBLE(msdu) =
+			rx_desc->msdu_end.lro_eligible;
+
+	if (QDF_NBUF_CB_RX_LRO_ELIGIBLE(msdu)) {
 		QDF_NBUF_CB_RX_TCP_PURE_ACK(msdu) = rx_desc->msdu_start.tcp_only_ack;
 		QDF_NBUF_CB_RX_TCP_CHKSUM(msdu) = rx_desc->msdu_end.tcp_udp_chksum;
 		QDF_NBUF_CB_RX_TCP_SEQ_NUM(msdu) = rx_desc->msdu_end.tcp_seq_number;
@@ -534,10 +541,12 @@ void htt_htc_misc_pkt_pool_free(struct htt_pdev_t *pdev);
 #endif
 
 int
-htt_rx_hash_list_insert(struct htt_pdev_t *pdev, uint32_t paddr,
+htt_rx_hash_list_insert(struct htt_pdev_t *pdev,
+			qdf_dma_addr_t paddr,
 			qdf_nbuf_t netbuf);
 
-qdf_nbuf_t htt_rx_hash_list_lookup(struct htt_pdev_t *pdev, uint32_t paddr);
+qdf_nbuf_t
+htt_rx_hash_list_lookup(struct htt_pdev_t *pdev, qdf_dma_addr_t paddr);
 
 #ifdef IPA_OFFLOAD
 int

@@ -324,6 +324,7 @@ typedef struct _cds_context_type {
 	 */
 	uint8_t sap_mandatory_channels[QDF_MAX_NUM_CHAN];
 	uint32_t sap_mandatory_channels_len;
+	bool enable_sap_mandatory_chan_list;
 	bool do_hw_mode_change;
 	bool enable_fatal_event;
 	struct cds_config_info *cds_cfg;
@@ -331,6 +332,8 @@ typedef struct _cds_context_type {
 	/* This is to track if HW mode change is in progress */
 	uint32_t hw_mode_change_in_progress;
 } cds_context_type, *p_cds_contextType;
+
+extern struct _cds_sched_context *gp_cds_sched_context;
 
 /*---------------------------------------------------------------------------
    Function declarations and documenation
@@ -556,7 +559,15 @@ void cds_ssr_protect_init(void);
 void cds_ssr_protect(const char *caller_func);
 void cds_ssr_unprotect(const char *caller_func);
 bool cds_wait_for_external_threads_completion(const char *caller_func);
+void cds_print_external_threads(void);
 int cds_get_gfp_flags(void);
+
+/**
+ * cds_return_external_threads_count() - return active external thread calls
+ *
+ * Return: total number of active extrenal threads in driver
+ */
+int cds_return_external_threads_count(void);
 
 /**
  * cds_shutdown_notifier_register() - Register for shutdown notification
